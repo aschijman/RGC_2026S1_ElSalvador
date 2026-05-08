@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Vinculación Objetivos Específicos — Resultados Esperados EBP</title>
+<style>
+  :root {
+    --bg: #0f1726;
+    --bg-soft: #16203a;
+    --panel: #1c2a47;
+    --text: #e8ecf4;
+    --text-dim: #93a0b8;
+    --accent: #4dabf7;
+    --green: #2fb344;
+    --green-soft: rgba(47,179,68,0.55);
+    --yellow: #f0a420;
+    --yellow-soft: rgba(240,164,32,0.55);
+    --red: #e03131;
+    --red-soft: rgba(224,49,49,0.55);
+    --gray: #6c7a93;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; padding: 0;
+    background: linear-gradient(135deg, #0f1726 0%, #1a2b50 100%);
+    color: var(--text);
+    font-family: -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    min-height: 100vh;
+  }
+  .container {
+    max-width: 2100px;
+    margin: 0 auto;
+    padding: 32px 40px 70px;
+  }
+  header { margin-bottom: 22px; }
+  h1 {
+    font-size: 22px; margin: 0 0 4px;
+    font-weight: 700; letter-spacing: -0.3px;
+  }
+  .subtitle { color: var(--text-dim); font-size: 13px; margin: 0; }
+  .legend {
+    display: flex; gap: 24px; flex-wrap: wrap;
+    margin: 14px 0 10px;
+    background: var(--bg-soft);
+    padding: 10px 16px; border-radius: 10px;
+    border: 1px solid rgba(255,255,255,0.06);
+  }
+  .legend-group {
+    display: flex; align-items: center; gap: 14px;
+    padding-right: 28px; border-right: 1px solid rgba(255,255,255,0.08);
+  }
+  .legend-group:last-child { border-right: none; }
+  .legend-title {
+    font-size: 11px; text-transform: uppercase; letter-spacing: 1px;
+    color: var(--text-dim); font-weight: 600;
+  }
+  .swatch { display: flex; align-items: center; gap: 7px; font-size: 13px; }
+  .dot {
+    width: 16px; height: 16px; border-radius: 50%;
+    border: 2px solid rgba(255,255,255,0.2);
+  }
+  .dot.alta { background: var(--green); }
+  .dot.media { background: var(--yellow); }
+  .dot.baja { background: var(--red); }
+  .dot.na { background: var(--gray); }
+  .strength-bar {
+    width: 32px; height: 5px; border-radius: 2px;
+    background: var(--text-dim);
+  }
+  .strength-bar.strong { height: 8px; background: var(--text); }
+  .strength-bar.weak { height: 4px; background: var(--text-dim); opacity: 0.55; }
+  .grad-bar {
+    display: inline-block;
+    width: 130px; height: 12px; border-radius: 6px;
+    background: linear-gradient(to right,
+      #e03131 0%, #f0a420 40%, #c5d63b 55%, #82c91e 70%, #37b24d 85%, #0b7a30 100%);
+    border: 1px solid rgba(255,255,255,0.15);
+  }
+
+  .chart-wrap {
+    background: rgba(20, 28, 50, 0.5);
+    border-radius: 14px;
+    border: 1px solid rgba(255,255,255,0.06);
+    padding: 10px;
+    overflow: visible;
+  }
+  svg { display: block; width: 100%; height: auto; }
+
+  .col-title {
+    fill: var(--text);
+    font-size: 22px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+  }
+  .col-title-sub {
+    fill: var(--text-dim);
+    font-size: 16px;
+  }
+  .oe-node, .ebp-node {
+    cursor: pointer;
+    transition: opacity 0.2s;
+  }
+  .oe-label {
+    fill: var(--text);
+    font-size: 18px;
+    pointer-events: none;
+  }
+  .oe-project {
+    font-weight: 700;
+    fill: var(--accent);
+    font-size: 18px;
+  }
+  .ebp-label {
+    fill: var(--text);
+    font-size: 32px;
+    font-weight: 700;
+    pointer-events: none;
+  }
+  .ebp-rect {
+    stroke: rgba(255,255,255,0.18);
+    stroke-width: 1;
+  }
+  .ebp-rect.highlighted { stroke: var(--accent); stroke-width: 2; }
+  .oe-rect {
+    stroke: rgba(255,255,255,0.1);
+    stroke-width: 1;
+  }
+  .oe-rect.alta { fill: var(--green); }
+  .oe-rect.media { fill: var(--yellow); }
+  .oe-rect.baja { fill: var(--red); }
+  .oe-rect.na { fill: var(--gray); }
+
+  .link {
+    fill: none;
+    cursor: pointer;
+    transition: opacity 0.2s, stroke-width 0.2s;
+  }
+  .link.alta { stroke: var(--green-soft); }
+  .link.media { stroke: var(--yellow-soft); }
+  .link.baja { stroke: var(--red-soft); }
+  .link.na { stroke: rgba(108,122,147,0.45); }
+  .link.dimmed { opacity: 0.08 !important; }
+  .link:hover { opacity: 1 !important; }
+
+  .tooltip {
+    position: fixed;
+    pointer-events: none;
+    background: #0a1322;
+    border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 8px;
+    padding: 12px 16px;
+    font-size: 14px;
+    line-height: 1.5;
+    max-width: 420px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.6);
+    opacity: 0;
+    transition: opacity 0.15s;
+    z-index: 100;
+  }
+  .tooltip.visible { opacity: 1; }
+  .tt-title { font-weight: 700; font-size: 15px; margin-bottom: 7px; color: var(--text); }
+  .tt-row { display: flex; gap: 10px; margin: 3px 0; }
+  .tt-label { color: var(--text-dim); min-width: 110px; }
+  .tt-val { color: var(--text); }
+  .tt-pill {
+    display: inline-block;
+    padding: 2px 10px; border-radius: 11px;
+    font-size: 13px; font-weight: 600;
+  }
+  .tt-pill.alta { background: var(--green); color: #062b13; }
+  .tt-pill.media { background: var(--yellow); color: #3d2802; }
+  .tt-pill.baja { background: var(--red); color: #fff; }
+  .tt-pill.strong { background: rgba(255,255,255,0.92); color: #0a1322; }
+  .tt-pill.weak { background: rgba(255,255,255,0.18); color: var(--text); border: 1px dashed var(--text-dim); }
+
+  .stats {
+    display: flex; gap: 22px; margin-top: 20px;
+    flex-wrap: wrap;
+  }
+  .stat-card {
+    background: var(--bg-soft);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 10px;
+    padding: 14px 22px; min-width: 160px;
+  }
+  .stat-num { font-size: 28px; font-weight: 700; color: var(--text); }
+  .stat-label {
+    font-size: 13px; color: var(--text-dim);
+    text-transform: uppercase; letter-spacing: 0.8px;
+    margin-top: 3px;
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <h1>Vinculación de Objetivos Específicos con Resultados Esperados EBP</h1>
+    <p class="subtitle">RCPR I-2026 · Cartera de El Salvador — Aporte de cada Objetivo Específico de proyecto a los Resultados Esperados de la Estrategia BID-País</p>
+  </header>
+
+  <div class="legend">
+    <div class="legend-group">
+      <span class="legend-title">Probabilidad OE (discreta)</span>
+      <span class="swatch"><span class="dot alta"></span>Alta</span>
+      <span class="swatch"><span class="dot media"></span>Media</span>
+      <span class="swatch"><span class="dot baja"></span>Baja</span>
+      <span class="swatch"><span class="dot na"></span>N/A</span>
+    </div>
+    <div class="legend-group">
+      <span class="legend-title">Probabilidad EBP (continua)</span>
+      <span class="swatch" style="gap:6px;">
+        <span style="font-size:11px; color:var(--text-dim);">Baja</span>
+        <span class="grad-bar"></span>
+        <span style="font-size:11px; color:var(--text-dim);">Alta</span>
+      </span>
+    </div>
+    <div class="legend-group" style="border-right:none;">
+      <span class="legend-title">Vínculo</span>
+      <span class="swatch"><span class="strength-bar strong"></span>Fuerte (F) — línea sólida y gruesa</span>
+      <span class="swatch"><span class="strength-bar weak"></span>Débil (D) — línea punteada y fina</span>
+    </div>
+
+  </div>
+
+  <div class="chart-wrap">
+    <svg id="chart" xmlns="http://www.w3.org/2000/svg"></svg>
+  </div>
+
+  <div class="stats">
+    <div class="stat-card"><div class="stat-num" id="stat-oes">38</div><div class="stat-label">Objetivos Específicos</div></div>
+    <div class="stat-card"><div class="stat-num" id="stat-ebps">12</div><div class="stat-label">Resultados Esperados EBP</div></div>
+    <div class="stat-card"><div class="stat-num" id="stat-links">53</div><div class="stat-label">Vínculos OE → EBP</div></div>
+    <div class="stat-card"><div class="stat-num" id="stat-strong">31</div><div class="stat-label">Vínculos fuertes (F)</div></div>
+    <div class="stat-card"><div class="stat-num" id="stat-weak">22</div><div class="stat-label">Vínculos débiles (D)</div></div>
+  </div>
+</div>
+
+<div class="tooltip" id="tooltip"></div>
+
+<script>
+const DATA = {"oes": [{"id": "oe_0", "label": "ES-L1095 · Mejorar la accesibilidad y provisión de servicios hospitalarios", "fullText": "Mejorar la accesibilidad y provisión de servicios hospitalarios", "rating": "Alta", "project": "ES-L1095", "agency": "Ministerio de Salud (MINSAL)"}, {"id": "oe_1", "label": "ES-L1095 · Mejorar la cobertura, oportunidad y calidad de la provisión de servicios en la red ambulatoria", "fullText": "Mejorar la cobertura, oportunidad y calidad de la provisión de servicios en la red ambulatoria", "rating": "Alta", "project": "ES-L1095", "agency": "Ministerio de Salud (MINSAL)"}, {"id": "oe_2", "label": "ES-L1095 · Mejorar la eficiencia de la gestión de la red pública de salud", "fullText": "Mejorar la eficiencia de la gestión de la red pública de salud", "rating": "Alta", "project": "ES-L1095", "agency": "Ministerio de Salud (MINSAL)"}, {"id": "oe_3", "label": "ES-L1160 · Fortalecer la capacidad de diseño de políticas sanitarias y de gestión de las unidades del M...", "fullText": "Fortalecer la capacidad de diseño de políticas sanitarias y de gestión de las unidades del MINSAL", "rating": "Alta", "project": "ES-L1160", "agency": "Ministerio de Salud (MINSAL)"}, {"id": "oe_4", "label": "ES-L1160 · Mejorar el acceso y la cobertura de la red de servicios mediante el fortalecimiento e integr...", "fullText": "Mejorar el acceso y la cobertura de la red de servicios mediante el fortalecimiento e integración de los servicios de salud digital", "rating": "Alta", "project": "ES-L1160", "agency": "Ministerio de Salud (MINSAL)"}, {"id": "oe_5", "label": "ES-L1160 · Mejorar la calidad de infraestructura del PNA, ampliar la cobertura especializada y fortalec...", "fullText": "Mejorar la calidad de infraestructura del PNA, ampliar la cobertura especializada y fortalecer la resiliencia hospitalaria", "rating": "Alta", "project": "ES-L1160", "agency": "Ministerio de Salud (MINSAL)"}, {"id": "oe_6", "label": "ES-L1160 · Mejorar la eficiencia en la provisión de servicios de apoyo a hospitales y PNA, así como la ...", "fullText": "Mejorar la eficiencia en la provisión de servicios de apoyo a hospitales y PNA, así como la oportunidad de respuesta a las emergencias", "rating": "Alta", "project": "ES-L1160", "agency": "Ministerio de Salud (MINSAL)"}, {"id": "oe_7", "label": "ES-L1151 · Aumentar el gasto turístico internacional y doméstico por visitante", "fullText": "Aumentar el gasto turístico internacional y doméstico por visitante", "rating": "Baja", "project": "ES-L1151", "agency": "Ministerio de Turismo (MITUR)"}, {"id": "oe_8", "label": "ES-L1151 · Aumentar la inversión privada turística", "fullText": "Aumentar la inversión privada turística", "rating": "Baja", "project": "ES-L1151", "agency": "Ministerio de Turismo (MITUR)"}, {"id": "oe_9", "label": "ES-L1151 · Reforzar la sostenibilidad medioambiental de los destinos turísticos salvadoreños", "fullText": "Reforzar la sostenibilidad medioambiental de los destinos turísticos salvadoreños", "rating": "Baja", "project": "ES-L1151", "agency": "Ministerio de Turismo (MITUR)"}, {"id": "oe_10", "label": "ES-L1139 · Ampliar y mejorar la calidad de la educación de los jóvenes vulnerables con enfoque de género", "fullText": "Ampliar y mejorar la calidad de la educación de los jóvenes vulnerables con enfoque de género", "rating": "Alta", "project": "ES-L1139", "agency": "Ministerio de Educación, Ciencia y Tecnología (MINEDUCYT)"}, {"id": "oe_11", "label": "ES-L1139 · Expandir y mejorar la calidad y cobertura de los servicios de primera infancia", "fullText": "Expandir y mejorar la calidad y cobertura de los servicios de primera infancia", "rating": "Alta", "project": "ES-L1139", "agency": "Dirección Nacional de Obras Municipales (DOM)"}, {"id": "oe_12", "label": "ES-L1139 · Mejorar la efectividad de la gestión educativa", "fullText": "Mejorar la efectividad de la gestión educativa", "rating": "Alta", "project": "ES-L1139", "agency": "Ministerio de Educación, Ciencia y Tecnología (MINEDUCYT)"}, {"id": "oe_13", "label": "ES-L1167 · Fortalecer las capacidades de gestión educativa, incluyendo las que integren medidas de miti...", "fullText": "Fortalecer las capacidades de gestión educativa, incluyendo las que integren medidas de mitigación y adaptación frente al CC", "rating": "Alta", "project": "ES-L1167", "agency": "Ministerio de Educación, Ciencia y Tecnología (MINEDUCYT)"}, {"id": "oe_14", "label": "ES-L1167 · Incrementar el acceso a servicios educativos inclusivos para los EcD", "fullText": "Incrementar el acceso a servicios educativos inclusivos para los EcD", "rating": "Alta", "project": "ES-L1167", "agency": "Ministerio de Educación, Ciencia y Tecnología (MINEDUCYT)"}, {"id": "oe_15", "label": "ES-L1167 · Incrementar la oferta educativa con resiliencia al CC focalizada en los niveles de parvulari...", "fullText": "Incrementar la oferta educativa con resiliencia al CC focalizada en los niveles de parvularia y secundaria", "rating": "Alta", "project": "ES-L1167", "agency": "Dirección Nacional de Obras Municipales (DOM)"}, {"id": "oe_16", "label": "ES-L1167 · Incrementar la reinserción educativa de la niñez y adolescencia retornada", "fullText": "Incrementar la reinserción educativa de la niñez y adolescencia retornada", "rating": "Alta", "project": "ES-L1167", "agency": "Ministerio de Educación, Ciencia y Tecnología (MINEDUCYT)"}, {"id": "oe_17", "label": "ES-L1167 · Mejorar las prácticas directivas y pedagógicas para contribuir a la mejora de la calidad de ...", "fullText": "Mejorar las prácticas directivas y pedagógicas para contribuir a la mejora de la calidad de los aprendizajes", "rating": "Alta", "project": "ES-L1167", "agency": "Ministerio de Educación, Ciencia y Tecnología (MINEDUCYT)"}, {"id": "oe_18", "label": "ES-L1158 · Fortalecer la capacidad técnica de la CEL para la planificación y gestión de proyectos de el...", "fullText": "Fortalecer la capacidad técnica de la CEL para la planificación y gestión de proyectos de electrificación", "rating": "Alta", "project": "ES-L1158", "agency": "Comisión Ejecutiva Hidroeléctrica del Río Lempa (CEL)"}, {"id": "oe_19", "label": "ES-L1158 · Incrementar el acceso al servicio de energía eléctrica en el país", "fullText": "Incrementar el acceso al servicio de energía eléctrica en el país", "rating": "Alta", "project": "ES-L1158", "agency": "Comisión Ejecutiva Hidroeléctrica del Río Lempa (CEL)"}, {"id": "oe_20", "label": "ES-L1158 · Promover los usos productivos de la energía con un enfoque de género en las comunidades bene...", "fullText": "Promover los usos productivos de la energía con un enfoque de género en las comunidades beneficiarias de los proyectos de electrificación", "rating": "Alta", "project": "ES-L1158", "agency": "Comisión Ejecutiva Hidroeléctrica del Río Lempa (CEL)"}, {"id": "oe_21", "label": "ES-L1172 · Aumentar la competitividad y fomentar la formalización de los comercios en los mercados muni...", "fullText": "Aumentar la competitividad y fomentar la formalización de los comercios en los mercados municipales de ambos distritos", "rating": "Alta", "project": "ES-L1172", "agency": "Dirección Nacional de Obras Municipales (DOM)"}, {"id": "oe_22", "label": "ES-L1172 · Fortalecer las capacidades institucionales y financieras de los municipios de Libertad Sur y...", "fullText": "Fortalecer las capacidades institucionales y financieras de los municipios de Libertad Sur y Libertad Costa", "rating": "Alta", "project": "ES-L1172", "agency": "Dirección Nacional de Obras Municipales (DOM)"}, {"id": "oe_23", "label": "ES-L1172 · Mejorar el acceso a servicios públicos de calidad, así como la infraestructura urbana local,...", "fullText": "Mejorar el acceso a servicios públicos de calidad, así como la infraestructura urbana local, en las áreas centrales de los distritos de Santa Tecla y La Libertad, incluidos los mercados municipales", "rating": "Alta", "project": "ES-L1172", "agency": "Dirección Nacional de Obras Municipales (DOM)"}, {"id": "oe_24", "label": "ES-L1168 · Componente 1: Infraestructura de Datos del Estado", "fullText": "Componente 1: Infraestructura de Datos del Estado", "rating": "Alta", "project": "ES-L1168", "agency": "Secretaría de Innovación de la Presidencia (SIP)"}, {"id": "oe_25", "label": "ES-L1168 · Componente 2: Habilidades digitales", "fullText": "Componente 2: Habilidades digitales", "rating": "Alta", "project": "ES-L1168", "agency": "Secretaría de Innovación de la Presidencia (SIP)"}, {"id": "oe_26", "label": "ES-L1156 · Promover la expansión del acceso a crédito productivo de mediano y largo plazo para MIPYME s...", "fullText": "Promover la expansión del acceso a crédito productivo de mediano y largo plazo para MIPYME salvadoreñas, a través del apoyo a la actuación de BANDESAL", "rating": "Media", "project": "ES-L1156", "agency": "Banco de Desarrollo de la República de El Salvador (BANDESAL)"}, {"id": "oe_27", "label": "ES-L1162 · Apoyar con financiamiento de mediano y largo plazo para que las Micro, Pequeñas y Medianas E...", "fullText": "Apoyar con financiamiento de mediano y largo plazo para que las Micro, Pequeñas y Medianas Empresas (MIPYME) realicen inversiones que reditúen en Ahorros Energéticos (AE) y Reducción de Emisiones (RE)", "rating": "Media", "project": "ES-L1162", "agency": "Banco de Desarrollo de la República de El Salvador (BANDESAL)"}, {"id": "oe_28", "label": "ES-L1163 · Promover inversiones en transformación tecnológica y digital, a través de financiamiento a M...", "fullText": "Promover inversiones en transformación tecnológica y digital, a través de financiamiento a MIPYME", "rating": "Alta", "project": "ES-L1163", "agency": "Banco de Desarrollo de la República de El Salvador (BANDESAL)"}, {"id": "oe_29", "label": "ES-L1152 · Mejorar la continuidad de los servicios de agua potable en el Área Metropolitana de San Salv...", "fullText": "Mejorar la continuidad de los servicios de agua potable en el Área Metropolitana de San Salvador", "rating": "Baja", "project": "ES-L1152", "agency": "Administración Nacional de Acueductos y Alcantarillados (ANDA)"}, {"id": "oe_30", "label": "ES-L1152 · Mejorar la eficiencia energética de los sistemas de agua potable en el Área Metropolitana de...", "fullText": "Mejorar la eficiencia energética de los sistemas de agua potable en el Área Metropolitana de San Salvador", "rating": "Baja", "project": "ES-L1152", "agency": "Administración Nacional de Acueductos y Alcantarillados (ANDA)"}, {"id": "oe_31", "label": "ES-L1152 · Reducir los niveles de Agua no Contabilizada (ANC) en el Área Metropolitana de San Salvador", "fullText": "Reducir los niveles de Agua no Contabilizada (ANC) en el Área Metropolitana de San Salvador", "rating": "Baja", "project": "ES-L1152", "agency": "Administración Nacional de Acueductos y Alcantarillados (ANDA)"}, {"id": "oe_32", "label": "ES-L1173 · Fortalecer la capacidad institucional para la planificación, operación y gestión del transpo...", "fullText": "Fortalecer la capacidad institucional para la planificación, operación y gestión del transporte aéreo de El Salvador", "rating": "Alta", "project": "ES-L1173", "agency": "Comisión Ejecutiva Portuaria Autónoma (CEPA)"}, {"id": "oe_33", "label": "ES-L1173 · Indicadores de temas transversales (energía solar, capacitación en igualdad de oportunidades)", "fullText": "Indicadores de temas transversales (energía solar, capacitación en igualdad de oportunidades)", "rating": "Alta", "project": "ES-L1173", "agency": "Comisión Ejecutiva Portuaria Autónoma (CEPA)"}, {"id": "oe_34", "label": "ES-L1173 · Mejorar la calidad del servicio del AIES", "fullText": "Mejorar la calidad del servicio del AIES", "rating": "Alta", "project": "ES-L1173", "agency": "Comisión Ejecutiva Portuaria Autónoma (CEPA)"}, {"id": "oe_35", "label": "ES-L1145 · Reducir la brecha de habilidades y competencias digitales en los sitios públicos conectados", "fullText": "Reducir la brecha de habilidades y competencias digitales en los sitios públicos conectados", "rating": "Baja", "project": "ES-L1145", "agency": "Secretaría de Innovación de la Presidencia (SIP)"}, {"id": "oe_36", "label": "ES-L1165 · Aumentar el acceso a crédito hipotecario para la adquisición de vivienda atendiendo a poblac...", "fullText": "Aumentar el acceso a crédito hipotecario para la adquisición de vivienda atendiendo a poblaciones subatendidas", "rating": "Alta", "project": "ES-L1165", "agency": "Fondo Social para la Vivienda (FSV)"}, {"id": "oe_37", "label": "ES-L1165 · Promover la adopción de vivienda sostenible", "fullText": "Promover la adopción de vivienda sostenible", "rating": "Alta", "project": "ES-L1165", "agency": "Fondo Social para la Vivienda (FSV)"}], "ebps": [{"id": "ebp_0", "label": "Aumentar el Acceso a Servicios Médicos Especializados", "majorityRating": "Alta", "score": 1.0}, {"id": "ebp_1", "label": "Actualizar Marcos Regulatorios Estratégicos", "majorityRating": "Alta", "score": 0.3404761904761905}, {"id": "ebp_2", "label": "Elevar las competencias lectoras y matemáticas de los jóvenes", "majorityRating": "Alta", "score": 0.8526315789473684}, {"id": "ebp_3", "label": "Impulsar trayectorias educativas completes", "majorityRating": "Alta", "score": 0.8526315789473684}, {"id": "ebp_4", "label": "Aumentar la Cobertura y la Sostenibilidad del Sistema Eléctrico", "majorityRating": "Alta", "score": 0.8631944444444444}, {"id": "ebp_5", "label": "Aumentar los Pagos Digitales", "majorityRating": "Alta", "score": 0.65}, {"id": "ebp_6", "label": "Avanzar en la Provisión de Soluciones de Gobierno Electrónico", "majorityRating": "Alta", "score": 1.0}, {"id": "ebp_7", "label": "Mejorar el Acceso del Sector Privado a Productos Financieros", "majorityRating": "Media", "score": 0.6428571428571429}, {"id": "ebp_8", "label": "Ampliar la Cobertura de Servicios Adecuados de Agua y Saneamiento en áreas rurales", "majorityRating": "Baja", "score": 0.0}, {"id": "ebp_9", "label": "Mejorar la Infraestructura Aeroportuaria [para pasajeros]", "majorityRating": "Alta", "score": 1.0}, {"id": "ebp_10", "label": "Ampliar la Conectividad a Internet", "majorityRating": "Baja", "score": 0.0}, {"id": "ebp_11", "label": "Mejorar las Condiciones de Vivienda en poblaciónes vulnerables", "majorityRating": "Alta", "score": 1.0}], "links": [{"source": "oe_10", "target": "ebp_2", "strong": 0, "weak": 1, "total": 1, "strength": "weak", "rating": "Alta"}, {"source": "oe_10", "target": "ebp_3", "strong": 0, "weak": 1, "total": 1, "strength": "weak", "rating": "Alta"}, {"source": "oe_27", "target": "ebp_4", "strong": 0, "weak": 2, "total": 2, "strength": "weak", "rating": "Media"}, {"source": "oe_27", "target": "ebp_7", "strong": 2, "weak": 0, "total": 2, "strength": "strong", "rating": "Media"}, {"source": "oe_36", "target": "ebp_11", "strong": 1, "weak": 0, "total": 1, "strength": "strong", "rating": "Alta"}, {"source": "oe_7", "target": "ebp_1", "strong": 0, "weak": 5, "total": 5, "strength": "weak", "rating": "Baja"}, {"source": "oe_21", "target": "ebp_5", "strong": 0, "weak": 3, "total": 3, "strength": "weak", "rating": "Alta"}, {"source": "oe_21", "target": "ebp_1", "strong": 0, "weak": 3, "total": 3, "strength": "weak", "rating": "Alta"}, {"source": "oe_8", "target": "ebp_1", "strong": 0, "weak": 2, "total": 2, "strength": "weak", "rating": "Baja"}, {"source": "oe_24", "target": "ebp_6", "strong": 4, "weak": 0, "total": 4, "strength": "strong", "rating": "Alta"}, {"source": "oe_25", "target": "ebp_6", "strong": 3, "weak": 0, "total": 3, "strength": "strong", "rating": "Alta"}, {"source": "oe_11", "target": "ebp_2", "strong": 0, "weak": 6, "total": 6, "strength": "weak", "rating": "Alta"}, {"source": "oe_11", "target": "ebp_3", "strong": 0, "weak": 6, "total": 6, "strength": "weak", "rating": "Alta"}, {"source": "oe_3", "target": "ebp_0", "strong": 2, "weak": 0, "total": 2, "strength": "strong", "rating": "Alta"}, {"source": "oe_32", "target": "ebp_9", "strong": 1, "weak": 0, "total": 1, "strength": "strong", "rating": "Alta"}, {"source": "oe_32", "target": "ebp_1", "strong": 0, "weak": 1, "total": 1, "strength": "weak", "rating": "Alta"}, {"source": "oe_18", "target": "ebp_4", "strong": 3, "weak": 0, "total": 3, "strength": "strong", "rating": "Alta"}, {"source": "oe_13", "target": "ebp_2", "strong": 1, "weak": 0, "total": 1, "strength": "strong", "rating": "Alta"}, {"source": "oe_13", "target": "ebp_3", "strong": 1, "weak": 0, "total": 1, "strength": "strong", "rating": "Alta"}, {"source": "oe_22", "target": "ebp_5", "strong": 0, "weak": 3, "total": 3, "strength": "weak", "rating": "Alta"}, {"source": "oe_22", "target": "ebp_1", "strong": 0, "weak": 3, "total": 3, "strength": "weak", "rating": "Alta"}, {"source": "oe_14", "target": "ebp_2", "strong": 3, "weak": 0, "total": 3, "strength": "strong", "rating": "Alta"}, {"source": "oe_14", "target": "ebp_3", "strong": 3, "weak": 0, "total": 3, "strength": "strong", "rating": "Alta"}, {"source": "oe_19", "target": "ebp_4", "strong": 5, "weak": 0, "total": 5, "strength": "strong", "rating": "Alta"}, {"source": "oe_15", "target": "ebp_2", "strong": 4, "weak": 0, "total": 4, "strength": "strong", "rating": "Alta"}, {"source": "oe_15", "target": "ebp_3", "strong": 4, "weak": 0, "total": 4, "strength": "strong", "rating": "Alta"}, {"source": "oe_16", "target": "ebp_2", "strong": 2, "weak": 0, "total": 2, "strength": "strong", "rating": "Alta"}, {"source": "oe_16", "target": "ebp_3", "strong": 2, "weak": 0, "total": 2, "strength": "strong", "rating": "Alta"}, {"source": "oe_33", "target": "ebp_9", "strong": 1, "weak": 0, "total": 1, "strength": "strong", "rating": "Alta"}, {"source": "oe_33", "target": "ebp_1", "strong": 0, "weak": 1, "total": 1, "strength": "weak", "rating": "Alta"}, {"source": "oe_23", "target": "ebp_5", "strong": 0, "weak": 2, "total": 2, "strength": "weak", "rating": "Alta"}, {"source": "oe_23", "target": "ebp_1", "strong": 0, "weak": 2, "total": 2, "strength": "weak", "rating": "Alta"}, {"source": "oe_4", "target": "ebp_0", "strong": 6, "weak": 0, "total": 6, "strength": "strong", "rating": "Alta"}, {"source": "oe_0", "target": "ebp_0", "strong": 4, "weak": 0, "total": 4, "strength": "strong", "rating": "Alta"}, {"source": "oe_5", "target": "ebp_0", "strong": 4, "weak": 0, "total": 4, "strength": "strong", "rating": "Alta"}, {"source": "oe_34", "target": "ebp_9", "strong": 1, "weak": 0, "total": 1, "strength": "strong", "rating": "Alta"}, {"source": "oe_34", "target": "ebp_1", "strong": 0, "weak": 1, "total": 1, "strength": "weak", "rating": "Alta"}, {"source": "oe_1", "target": "ebp_0", "strong": 7, "weak": 0, "total": 7, "strength": "strong", "rating": "Alta"}, {"source": "oe_29", "target": "ebp_8", "strong": 0, "weak": 2, "total": 2, "strength": "weak", "rating": "Baja"}, {"source": "oe_12", "target": "ebp_2", "strong": 0, "weak": 1, "total": 1, "strength": "weak", "rating": "Alta"}, {"source": "oe_12", "target": "ebp_3", "strong": 0, "weak": 1, "total": 1, "strength": "weak", "rating": "Alta"}, {"source": "oe_2", "target": "ebp_0", "strong": 5, "weak": 0, "total": 5, "strength": "strong", "rating": "Alta"}, {"source": "oe_6", "target": "ebp_0", "strong": 5, "weak": 0, "total": 5, "strength": "strong", "rating": "Alta"}, {"source": "oe_30", "target": "ebp_8", "strong": 0, "weak": 1, "total": 1, "strength": "weak", "rating": "Baja"}, {"source": "oe_17", "target": "ebp_2", "strong": 1, "weak": 0, "total": 1, "strength": "strong", "rating": "Alta"}, {"source": "oe_17", "target": "ebp_3", "strong": 1, "weak": 0, "total": 1, "strength": "strong", "rating": "Alta"}, {"source": "oe_28", "target": "ebp_7", "strong": 2, "weak": 0, "total": 2, "strength": "strong", "rating": "Alta"}, {"source": "oe_37", "target": "ebp_11", "strong": 1, "weak": 0, "total": 1, "strength": "strong", "rating": "Alta"}, {"source": "oe_26", "target": "ebp_7", "strong": 3, "weak": 0, "total": 3, "strength": "strong", "rating": "Media"}, {"source": "oe_20", "target": "ebp_4", "strong": 2, "weak": 0, "total": 2, "strength": "strong", "rating": "Alta"}, {"source": "oe_35", "target": "ebp_10", "strong": 2, "weak": 0, "total": 2, "strength": "strong", "rating": "Baja"}, {"source": "oe_31", "target": "ebp_8", "strong": 0, "weak": 2, "total": 2, "strength": "weak", "rating": "Baja"}, {"source": "oe_9", "target": "ebp_1", "strong": 0, "weak": 3, "total": 3, "strength": "weak", "rating": "Baja"}]};
+
+const svg = document.getElementById('chart');
+const tooltip = document.getElementById('tooltip');
+
+// Layout config — wider canvas to accommodate larger labels
+const W = 2400;
+const TITLE_H = 80;
+const COL_OE_X = 70;
+const COL_OE_W = 22;
+const COL_OE_LABEL_X = COL_OE_X + COL_OE_W + 12;
+const COL_EBP_X = W - 880;
+const COL_EBP_W = 32;
+const COL_EBP_LABEL_X = COL_EBP_X + COL_EBP_W + 12;
+
+// Bigger node heights to match larger fonts
+const oeNodeH = 32;
+const oeGap = 8;
+const oes = DATA.oes;
+const ebps = DATA.ebps;
+const links = DATA.links;
+
+const totalOEHeight = oes.length * (oeNodeH + oeGap) - oeGap;
+
+const ebpInbound = {};
+ebps.forEach(e => ebpInbound[e.id] = 0);
+links.forEach(l => { ebpInbound[l.target] += (l.strong * 2 + l.weak * 1); });
+
+const ebpAvailable = totalOEHeight - 60;
+const ebpGap = 28;
+const ebpGapTotal = ebpGap * (ebps.length - 1);
+const ebpNodeAreaTotal = ebpAvailable - ebpGapTotal;
+
+let ebpHeights = {};
+const minH = 130;
+let extraReserved = 0;
+let weightedTotal = 0;
+ebps.forEach(e => {
+  const w = Math.max(ebpInbound[e.id], 1);
+  weightedTotal += w;
+});
+ebps.forEach(e => {
+  const w = Math.max(ebpInbound[e.id], 1);
+  let h = (w / weightedTotal) * ebpNodeAreaTotal;
+  if (h < minH) { extraReserved += (minH - h); h = minH; }
+  ebpHeights[e.id] = h;
+});
+const ebpsLarge = ebps.filter(e => ebpHeights[e.id] > minH).sort((a,b)=>ebpHeights[b.id]-ebpHeights[a.id]);
+let toReduce = extraReserved;
+while (toReduce > 0.5 && ebpsLarge.length > 0) {
+  const reducible = ebpsLarge.filter(e => ebpHeights[e.id] - 2 > minH);
+  if (reducible.length === 0) break;
+  const each = Math.min(toReduce / reducible.length, 1);
+  reducible.forEach(e => { ebpHeights[e.id] -= each; });
+  toReduce -= each * reducible.length;
+}
+
+let yCursor = TITLE_H;
+const oePos = {};
+oes.forEach((o) => {
+  oePos[o.id] = { x: COL_OE_X, y: yCursor, w: COL_OE_W, h: oeNodeH };
+  yCursor += oeNodeH + oeGap;
+});
+
+yCursor = TITLE_H + 30;
+const ebpPos = {};
+ebps.forEach((e) => {
+  const h = ebpHeights[e.id];
+  ebpPos[e.id] = { x: COL_EBP_X, y: yCursor, w: COL_EBP_W, h: h };
+  yCursor += h + ebpGap;
+});
+
+const totalH = Math.max(yCursor + 30, TITLE_H + totalOEHeight + 30);
+svg.setAttribute('viewBox', `0 0 ${W} ${totalH}`);
+svg.setAttribute('preserveAspectRatio', 'xMidYMid meet');
+
+const linksBySource = {};
+const linksByTarget = {};
+links.forEach((l, idx) => {
+  l._idx = idx;
+  if (!linksBySource[l.source]) linksBySource[l.source] = [];
+  if (!linksByTarget[l.target]) linksByTarget[l.target] = [];
+  linksBySource[l.source].push(l);
+  linksByTarget[l.target].push(l);
+});
+
+Object.values(linksBySource).forEach(arr =>
+  arr.sort((a,b) => ebpPos[a.target].y - ebpPos[b.target].y));
+Object.values(linksByTarget).forEach(arr =>
+  arr.sort((a,b) => oePos[a.source].y - oePos[b.source].y));
+
+links.forEach(l => {
+  l._sw = Math.max(2.5, l.total * 1.5);
+});
+
+const srcOffsets = {};
+Object.entries(linksBySource).forEach(([sid, arr]) => {
+  const node = oePos[sid];
+  const sumW = arr.reduce((s,l)=>s+l._sw, 0);
+  let y = node.y + node.h/2 - sumW/2;
+  arr.forEach(l => {
+    srcOffsets[l._idx] = y + l._sw/2;
+    y += l._sw;
+  });
+});
+const tgtOffsets = {};
+Object.entries(linksByTarget).forEach(([tid, arr]) => {
+  const node = ebpPos[tid];
+  const sumW = arr.reduce((s,l)=>s+l._sw, 0);
+  let y = node.y + node.h/2 - sumW/2;
+  arr.forEach(l => {
+    tgtOffsets[l._idx] = y + l._sw/2;
+    y += l._sw;
+  });
+});
+
+const SVG_NS = 'http://www.w3.org/2000/svg';
+function el(tag, attrs={}, parent=svg) {
+  const n = document.createElementNS(SVG_NS, tag);
+  for (const k in attrs) n.setAttribute(k, attrs[k]);
+  parent.appendChild(n);
+  return n;
+}
+
+el('text', {x: COL_OE_X, y: 32, class: 'col-title'}).textContent = 'Objetivos Específicos';
+el('text', {x: COL_OE_X, y: 56, class: 'col-title-sub'}).textContent = `${oes.length} OE de los proyectos · color = probabilidad de logro`;
+el('text', {x: COL_EBP_X, y: 38, class: 'col-title', style: 'font-size: 30px;'}).textContent = 'Resultado Esperado EBP';
+el('text', {x: COL_EBP_X, y: 66, class: 'col-title-sub', style: 'font-size: 20px;'}).textContent = `${ebps.length} resultados · color = probabilidad continua (rojo → verde) ponderada por OEs vinculados`;
+
+const linksLayer = el('g', {id: 'links'});
+const ratingClass = (r) => {
+  if (r === 'Alta') return 'alta';
+  if (r === 'Media') return 'media';
+  if (r === 'Baja') return 'baja';
+  return 'na';
+};
+
+// Continuous color scale with extended green band for finer differentiation:
+//   0.00 -> red          (#e03131)
+//   0.40 -> amber        (#f0a420)
+//   0.55 -> yellow-green (#c5d63b)
+//   0.70 -> light green  (#82c91e)
+//   0.85 -> medium green (#37b24d)
+//   1.00 -> deep green   (#0b7a30)
+function scoreToColor(score) {
+  if (score === null || score === undefined) return '#6c7a93';
+  const t = Math.max(0, Math.min(1, score));
+  const stops = [
+    {p: 0.00, r: 224, g: 49,  b: 49 },
+    {p: 0.40, r: 240, g: 164, b: 32 },
+    {p: 0.55, r: 197, g: 214, b: 59 },
+    {p: 0.70, r: 130, g: 201, b: 30 },
+    {p: 0.85, r: 55,  g: 178, b: 77 },
+    {p: 1.00, r: 11,  g: 122, b: 48 },
+  ];
+  let lo = stops[0], hi = stops[stops.length - 1];
+  for (let i = 0; i < stops.length - 1; i++) {
+    if (t >= stops[i].p && t <= stops[i+1].p) { lo = stops[i]; hi = stops[i+1]; break; }
+  }
+  const localT = (t - lo.p) / (hi.p - lo.p);
+  const r = Math.round(lo.r + (hi.r - lo.r) * localT);
+  const g = Math.round(lo.g + (hi.g - lo.g) * localT);
+  const b = Math.round(lo.b + (hi.b - lo.b) * localT);
+  return `rgb(${r},${g},${b})`;
+}
+
+links.forEach(l => {
+  const sx = oePos[l.source].x + oePos[l.source].w;
+  const sy = srcOffsets[l._idx];
+  const tx = ebpPos[l.target].x;
+  const ty = tgtOffsets[l._idx];
+  const midX = (sx + tx) / 2;
+  const d = `M${sx},${sy} C${midX},${sy} ${midX},${ty} ${tx},${ty}`;
+  const dash = (l.strength === 'weak') ? '7,6' : '';
+  const opacity = (l.strength === 'weak') ? 0.62 : 0.85;
+  const path = el('path', {
+    d, class: `link ${ratingClass(l.rating)}`,
+    'stroke-width': l._sw,
+    'stroke-linecap': 'round',
+    'stroke-dasharray': dash,
+    opacity: opacity,
+  }, linksLayer);
+  path._link = l;
+
+  path.addEventListener('mouseenter', (ev) => {
+    showLinkTooltip(ev, l);
+    highlight(l.source, l.target);
+  });
+  path.addEventListener('mousemove', moveTooltip);
+  path.addEventListener('mouseleave', () => { hideTooltip(); clearHighlight(); });
+});
+
+const oeLayer = el('g', {id: 'oes'});
+oes.forEach(o => {
+  const p = oePos[o.id];
+  const cls = ratingClass(o.rating);
+  const rect = el('rect', {
+    x: p.x, y: p.y, width: p.w, height: p.h,
+    rx: 4, class: `oe-rect ${cls}`,
+  }, oeLayer);
+  rect._oeId = o.id;
+
+  const hover = el('rect', {
+    x: p.x, y: p.y, width: W - p.x - 880, height: p.h,
+    fill: 'transparent', class: 'oe-node',
+  }, oeLayer);
+
+  const labelG = el('g', {}, oeLayer);
+  const labelY = p.y + p.h - 10;
+  const projText = el('text', {x: COL_OE_LABEL_X, y: labelY, class: 'oe-label oe-project'});
+  projText.textContent = o.project;
+  const oeText = el('text', {x: COL_OE_LABEL_X + 110, y: labelY, class: 'oe-label'});
+  oeText.textContent = o.label.replace(o.project + ' · ', '');
+
+  [hover, rect, labelG].forEach(node => {
+    node.addEventListener('mouseenter', (ev) => {
+      showOeTooltip(ev, o);
+      highlightOe(o.id);
+    });
+    node.addEventListener('mousemove', moveTooltip);
+    node.addEventListener('mouseleave', () => { hideTooltip(); clearHighlight(); });
+  });
+});
+
+const ebpLayer = el('g', {id: 'ebps'});
+ebps.forEach(e => {
+  const p = ebpPos[e.id];
+  const ebpFill = scoreToColor(e.score);
+  const rect = el('rect', {
+    x: p.x, y: p.y, width: p.w, height: p.h,
+    rx: 5, class: 'ebp-rect',
+    fill: ebpFill,
+  }, ebpLayer);
+  rect._ebpId = e.id;
+
+  const hover = el('rect', {
+    x: p.x, y: p.y, width: 880, height: p.h,
+    fill: 'transparent', class: 'ebp-node',
+  }, ebpLayer);
+
+  const labelGroup = el('g', {}, ebpLayer);
+  const labelText = el('text', {
+    x: COL_EBP_LABEL_X, y: p.y + 38, class: 'ebp-label',
+  }, labelGroup);
+  const words = e.label.split(' ');
+  const maxChars = 22;
+  let line = '';
+  let lineNum = 0;
+  const lineHeight = 38;
+  words.forEach((w) => {
+    if ((line + ' ' + w).trim().length > maxChars && line.length > 0) {
+      const tspan = document.createElementNS(SVG_NS, 'tspan');
+      tspan.setAttribute('x', COL_EBP_LABEL_X);
+      tspan.setAttribute('dy', lineNum === 0 ? 0 : lineHeight);
+      tspan.textContent = line.trim();
+      labelText.appendChild(tspan);
+      line = w + ' ';
+      lineNum++;
+    } else {
+      line += w + ' ';
+    }
+  });
+  if (line.trim()) {
+    const tspan = document.createElementNS(SVG_NS, 'tspan');
+    tspan.setAttribute('x', COL_EBP_LABEL_X);
+    tspan.setAttribute('dy', lineNum === 0 ? 0 : lineHeight);
+    tspan.textContent = line.trim();
+    labelText.appendChild(tspan);
+  }
+
+  const inboundLinks = linksByTarget[e.id] || [];
+  const inboundCount = inboundLinks.length;
+  if (inboundCount > 0) {
+    const bx = COL_EBP_LABEL_X + 760;
+    const by = p.y + 10;
+    el('text', {
+      x: bx, y: by + 14,
+      'text-anchor': 'end',
+      style: 'fill: var(--text-dim); font-size: 22px; font-weight: 700;'
+    }, labelGroup).textContent = `${inboundCount} OE`;
+  }
+
+  [hover, rect, labelGroup].forEach(node => {
+    node.addEventListener('mouseenter', (ev) => {
+      showEbpTooltip(ev, e);
+      highlightEbp(e.id);
+    });
+    node.addEventListener('mousemove', moveTooltip);
+    node.addEventListener('mouseleave', () => { hideTooltip(); clearHighlight(); });
+  });
+});
+
+function highlightOe(oeId) {
+  document.querySelectorAll('.link').forEach(p => {
+    if (p._link.source !== oeId) p.classList.add('dimmed');
+  });
+}
+function highlightEbp(ebpId) {
+  document.querySelectorAll('.link').forEach(p => {
+    if (p._link.target !== ebpId) p.classList.add('dimmed');
+  });
+}
+function highlight(srcId, tgtId) {
+  document.querySelectorAll('.link').forEach(p => {
+    if (p._link.source !== srcId || p._link.target !== tgtId) p.classList.add('dimmed');
+  });
+}
+function clearHighlight() {
+  document.querySelectorAll('.link.dimmed').forEach(p => p.classList.remove('dimmed'));
+}
+
+function showOeTooltip(ev, o) {
+  const ratingPill = `<span class="tt-pill ${ratingClass(o.rating)}">${o.rating}</span>`;
+  const linkedEbps = (linksBySource[o.id] || []).map(l => {
+    const ebp = ebps.find(e => e.id === l.target);
+    const strength = l.strength === 'strong' ? 'Fuerte' : 'Débil';
+    return `<div style="margin-top:4px;">→ ${ebp.label} <span class="tt-pill ${l.strength}" style="margin-left:4px;">${strength}</span></div>`;
+  }).join('');
+  tooltip.innerHTML = `
+    <div class="tt-title">${o.fullText}</div>
+    <div class="tt-row"><span class="tt-label">Proyecto:</span><span class="tt-val">${o.project}</span></div>
+    <div class="tt-row"><span class="tt-label">Agencia:</span><span class="tt-val">${o.agency || '-'}</span></div>
+    <div class="tt-row"><span class="tt-label">Probabilidad:</span><span class="tt-val">${ratingPill}</span></div>
+    <div style="margin-top:9px; padding-top:7px; border-top:1px solid rgba(255,255,255,0.1);">
+      <div class="tt-label" style="margin-bottom:3px;">Vínculos a EBP:</div>
+      ${linkedEbps || '<em>Sin vínculos</em>'}
+    </div>`;
+  showTooltip(ev);
+}
+function showEbpTooltip(ev, e) {
+  const inbound = linksByTarget[e.id] || [];
+  const counts = { Alta: 0, Media: 0, Baja: 0 };
+  let strongCt = 0, weakCt = 0;
+  inbound.forEach(l => {
+    if (counts[l.rating] !== undefined) counts[l.rating]++;
+    if (l.strength === 'strong') strongCt++; else weakCt++;
+  });
+  const oesLinked = inbound.map(l => {
+    const oe = oes.find(o => o.id === l.source);
+    return `<div style="margin-top:4px;">${oe.project} · ${oe.label.replace(oe.project + ' · ','').slice(0,55)}${oe.label.length>60?'…':''} <span class="tt-pill ${l.strength}" style="margin-left:4px;">${l.strength === 'strong' ? 'Fuerte':'Débil'}</span></div>`;
+  }).join('');
+  const scoreVal = (e.score === null || e.score === undefined) ? null : e.score;
+  const scoreColor = scoreToColor(scoreVal);
+  const scoreText = scoreVal === null ? 'N/A' : `${(scoreVal * 100).toFixed(0)} / 100`;
+  const scorePill = `<span class="tt-pill" style="background:${scoreColor}; color:#0a1322;">${scoreText}</span>`;
+  tooltip.innerHTML = `
+    <div class="tt-title">${e.label}</div>
+    <div class="tt-row"><span class="tt-label">Probabilidad:</span><span class="tt-val">${scorePill}</span></div>
+    <div class="tt-row"><span class="tt-label">OEs vinculados:</span><span class="tt-val">${inbound.length}</span></div>
+    <div class="tt-row"><span class="tt-label">Vínculos fuertes:</span><span class="tt-val">${strongCt}</span></div>
+    <div class="tt-row"><span class="tt-label">Vínculos débiles:</span><span class="tt-val">${weakCt}</span></div>
+    <div class="tt-row"><span class="tt-label">Calificaciones:</span><span class="tt-val">
+      <span class="tt-pill alta">${counts.Alta}</span>
+      <span class="tt-pill media">${counts.Media}</span>
+      ${counts.Baja > 0 ? `<span class="tt-pill baja">${counts.Baja}</span>` : ''}
+    </span></div>
+    <div style="margin-top:9px; padding-top:7px; border-top:1px solid rgba(255,255,255,0.1); max-height:280px; overflow:hidden;">
+      <div class="tt-label" style="margin-bottom:3px;">Aportan a este resultado:</div>
+      ${oesLinked}
+    </div>`;
+  showTooltip(ev);
+}
+function showLinkTooltip(ev, l) {
+  const oe = oes.find(o => o.id === l.source);
+  const ebp = ebps.find(e => e.id === l.target);
+  const strengthPill = `<span class="tt-pill ${l.strength}">${l.strength === 'strong' ? 'Fuerte (F)' : 'Débil (D)'}</span>`;
+  const ratingPill = `<span class="tt-pill ${ratingClass(l.rating)}">${l.rating}</span>`;
+  tooltip.innerHTML = `
+    <div class="tt-title">Vínculo</div>
+    <div class="tt-row"><span class="tt-label">OE:</span><span class="tt-val">${oe.fullText.slice(0,90)}${oe.fullText.length>90?'…':''}</span></div>
+    <div class="tt-row"><span class="tt-label">→ EBP:</span><span class="tt-val">${ebp.label}</span></div>
+    <div class="tt-row"><span class="tt-label">Fuerza:</span><span class="tt-val">${strengthPill}</span></div>
+    <div class="tt-row"><span class="tt-label">Filas con F:</span><span class="tt-val">${l.strong}</span></div>
+    <div class="tt-row"><span class="tt-label">Filas con D:</span><span class="tt-val">${l.weak}</span></div>
+    <div class="tt-row"><span class="tt-label">Color (logro):</span><span class="tt-val">${ratingPill}</span></div>`;
+  showTooltip(ev);
+}
+function showTooltip(ev) {
+  tooltip.classList.add('visible');
+  moveTooltip(ev);
+}
+function moveTooltip(ev) {
+  const x = Math.min(ev.clientX + 16, window.innerWidth - 440);
+  const y = Math.min(ev.clientY + 16, window.innerHeight - 280);
+  tooltip.style.left = x + 'px';
+  tooltip.style.top = y + 'px';
+}
+function hideTooltip() {
+  tooltip.classList.remove('visible');
+}
+</script>
+</body>
+</html>
